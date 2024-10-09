@@ -9,9 +9,12 @@ screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 36)
 
+# Prefijo de la ruta para los sprites
+SPRITE_PATH = './src/assets/images/sprites/player/'
+
 # Cargar sprites del jugador
 def load_sprite(filename):
-    return pygame.image.load(filename).convert_alpha()
+    return pygame.image.load(SPRITE_PATH + filename).convert_alpha()
 
 # Cargar sprites del jugador en diferentes direcciones
 sprites = {
@@ -23,7 +26,7 @@ sprites = {
 
 # Propiedades del jugador
 player = pygame.Rect(400, 300, 30, 30)
-speed = 6  # Velocidad del jugador
+speed = 7  # Velocidad del jugador
 lives = 3
 score = 0
 angle = 0  # Ángulo del jugador
@@ -57,7 +60,7 @@ level = 1
 next_level_score = 200  # Puntos para el siguiente nivel
 level_score_increase = 100
 max_levels = 10
-enemy_speed_increase = 0.1
+enemy_speed_increase = 0.01
 spawn_rate_decrease = 1
 
 # Pausa
@@ -113,6 +116,16 @@ def get_player_sprite():
         animation_index = (animation_index + 1) % len(sprites[current_direction])
     
     return sprites[current_direction][animation_index]
+
+# Función para reiniciar el juego
+def reset_game():
+    global lives, score, level, enemies, bullets, current_weapon
+    lives = 3
+    score = 0
+    level = 1
+    enemies = []
+    bullets = []
+    current_weapon = "normal"
 
 # Ciclo principal del juego
 running, frames = True, 0
@@ -211,6 +224,9 @@ while running:
         enemy_speed += enemy_speed_increase
         spawn_interval = max(5, spawn_interval - spawn_rate_decrease)
 
+        # Incrementar la vida del jugador
+        lives += 1  # Agregar una vida adicional al jugador
+
     # Dibujar pantalla
     screen.fill((0, 0, 0))
     
@@ -233,9 +249,26 @@ while running:
     draw_text(f"Arma: {current_weapon}", font, (255, 255, 255), screen, 360, 40)
 
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(30)  # Limitar a 30 FPS
 
     if lives <= 0:
-        running = False
+        screen.fill((0, 0, 0))
+        draw_text("GAME OVER", font, (255, 0, 0), screen, 320, 250)
+        draw_text(f"Puntos: {score}", font, (255, 255, 255), screen, 350, 300)
+        draw_text("Presiona R para reiniciar o ESC para salir", font, (255, 255, 255), screen, 150, 350)
+        pygame.display.flip()
+
+        # Esperar entrada para reiniciar o salir
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    waiting = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:  # Reiniciar juego
+                        reset_game()
+                        waiting = False
+                    elif event.key == pygame.K_ESCAPE:  # Salir del juego
+                        waiting = False
 
 pygame.quit()
