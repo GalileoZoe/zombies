@@ -5,9 +5,14 @@ import math
 pygame.init()
 
 # Configuración de pantalla
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 36)
+
+# Obtener información de la pantalla
+screendata = pygame.display.Info()
+screenwidth = screendata.current_w  # Ancho de la pantalla
+screenheight = screendata.current_h  # Alto de la pantalla
 
 # Prefijo de la ruta para los sprites
 SPRITE_PATH = './src/assets/images/sprites/player/'
@@ -26,7 +31,7 @@ sprites = {
 
 # Propiedades del jugador
 player = pygame.Rect(400, 300, 30, 30)
-speed = 7  # Velocidad del jugador
+speed = 8  # Velocidad del jugador
 lives = 3
 score = 0
 angle = 0  # Ángulo del jugador
@@ -42,11 +47,11 @@ bullets = []
 bullet_speed = 10  # Velocidad de los disparos
 
 # Propiedades de las armas
-current_weapon = "normal"  # Arma actual
+current_weapon = "Tauruz" 
 max_bullets = {
-    "normal": 5,
-    "metralleta": 15,
-    "escopeta": 3
+    "Tauruz": 6,
+    "Mini Uzi": 20,
+    "Remington": 4
 }
 
 # Propiedades de los enemigos
@@ -75,22 +80,22 @@ def spawn_enemy():
     if len(enemies) < max_enemies:
         side = random.choice(['top', 'bottom', 'left', 'right'])
         if side == 'top':
-            return pygame.Rect(random.randint(0, 770), 0, 30, 30)
+            return pygame.Rect(random.randint(0, screenwidth), 0, 30, 30)
         if side == 'bottom':
-            return pygame.Rect(random.randint(0, 770), 600, 30, 30)
+            return pygame.Rect(random.randint(0, screenwidth), screenheight, 30, 30)
         if side == 'left':
-            return pygame.Rect(0, random.randint(0, 570), 30, 30)
-        return pygame.Rect(800, random.randint(0, 570), 30, 30)
+            return pygame.Rect(0, random.randint(0, screenheight), 30, 30)
+        return pygame.Rect(screenwidth, random.randint(0, screenheight), 30, 30)
 
 # Función para disparar
 def shoot():
-    if current_weapon == "normal" and len(bullets) < max_bullets[current_weapon]:
+    if current_weapon == "Tauruz" and len(bullets) < max_bullets[current_weapon]:
         angle_rad = math.radians(angle)
         bullet_dx = math.cos(angle_rad) * bullet_speed
         bullet_dy = -math.sin(angle_rad) * bullet_speed
         bullets.append({'rect': pygame.Rect(player.x + 12, player.y + 12, 5, 5), 'dx': bullet_dx, 'dy': bullet_dy})
 
-    elif current_weapon == "escopeta" and len(bullets) < max_bullets[current_weapon]:
+    elif current_weapon == "Remington" and len(bullets) < max_bullets[current_weapon]:
         angle_rad = math.radians(angle)
         spread = 0.2  # Ángulo de dispersión
         for i in range(-1, 2):  # Dispara tres balas
@@ -98,7 +103,7 @@ def shoot():
             bullet_dy = -math.sin(angle_rad + i * spread) * bullet_speed
             bullets.append({'rect': pygame.Rect(player.x + 12, player.y + 12, 5, 5), 'dx': bullet_dx, 'dy': bullet_dy})
 
-    elif current_weapon == "metralleta":
+    elif current_weapon == "Mini Uzi":
         for _ in range(max_bullets[current_weapon]):  # Dispara múltiples balas
             angle_rad = math.radians(angle)
             bullet_dx = math.cos(angle_rad) * bullet_speed
@@ -125,7 +130,7 @@ def reset_game():
     level = 1
     enemies = []
     bullets = []
-    current_weapon = "normal"
+    current_weapon = "Tauruz"
 
 # Ciclo principal del juego
 running, frames = True, 0
@@ -152,18 +157,18 @@ while running:
 
     # Cambio de arma
     if keys[pygame.K_1]:
-        current_weapon = "normal"
+        current_weapon = "Tauruz"
     elif keys[pygame.K_2]:
-        current_weapon = "metralleta"
+        current_weapon = "Mini Uzi"
     elif keys[pygame.K_3]:
-        current_weapon = "escopeta"
+        current_weapon = "Remington"
 
     # Movimiento del jugador
     if keys[pygame.K_LEFT] and player.left > 0:
         player.x -= speed
         angle = 180
         current_direction = 'left'
-    if keys[pygame.K_RIGHT] and player.right < 800:
+    if keys[pygame.K_RIGHT] and player.right < screenwidth:
         player.x += speed
         angle = 0
         current_direction = 'right'
@@ -171,7 +176,7 @@ while running:
         player.y -= speed
         angle = 90
         current_direction = 'up'
-    if keys[pygame.K_DOWN] and player.bottom < 600:
+    if keys[pygame.K_DOWN] and player.bottom < screenheight:
         player.y += speed
         angle = 270
         current_direction = 'down'
@@ -181,7 +186,7 @@ while running:
         shoot()
 
     # Actualizar balas
-    bullets = [b for b in bullets if 0 < b['rect'].x < 800 and 0 < b['rect'].y < 600]
+    bullets = [b for b in bullets if 0 < b['rect'].x < screenwidth and 0 < b['rect'].y < screenheight]
     for bullet in bullets:
         bullet['rect'].x += bullet['dx']
         bullet['rect'].y += bullet['dy']
@@ -205,7 +210,7 @@ while running:
             enemies.remove(enemy)
             lives -= 1
 
-        if enemy.top > 600 or enemy.left > 800 or enemy.right < 0 or enemy.bottom < 0:
+        if enemy.top > screenheight or enemy.left > screenwidth or enemy.right < 0 or enemy.bottom < 0:
             enemies.remove(enemy)
 
     # Colisiones balas-enemigos
@@ -243,19 +248,19 @@ while running:
         pygame.draw.rect(screen, (0, 255, 0), enemy)
 
     # Mostrar puntaje, vidas, nivel y arma
-    draw_text(f"Puntos: {score}", font, (255, 255, 255), screen, 10, 10)
-    draw_text(f"Vidas: {lives}", font, (255, 255, 255), screen, 700, 10)
-    draw_text(f"Nivel: {level}", font, (255, 255, 255), screen, 360, 10)
-    draw_text(f"Arma: {current_weapon}", font, (255, 255, 255), screen, 360, 40)
+    draw_text(f"{score} Puntos", font, (255, 255, 255), screen, screenwidth/100, screenheight/100)
+    draw_text(f"{lives} Vidas", font, (255, 255, 255), screen, screenwidth-100, screenheight/100)
+    draw_text(f"Nivel {level}", font, (255, 255, 255), screen, screenwidth/2, screenheight/100)
+    draw_text(f"{current_weapon}", font, (255, 255, 255), screen, 360, 40)
 
     pygame.display.flip()
     clock.tick(30)  # Limitar a 30 FPS
 
     if lives <= 0:
         screen.fill((0, 0, 0))
-        draw_text("GAME OVER", font, (255, 0, 0), screen, 320, 250)
-        draw_text(f"Puntos: {score}", font, (255, 255, 255), screen, 350, 300)
-        draw_text("Presiona R para reiniciar o ESC para salir", font, (255, 255, 255), screen, 150, 350)
+        draw_text("GAME OVER", font, (255, 0, 0), screen, screenwidth/2, screenheight/2)
+        draw_text(f"Puntos: {score}", font, (255, 255, 255), screen, screenwidth/2, 300)
+        draw_text("Presiona R para reiniciar o ESC para salir", font, (255, 255, 255), screen, screenwidth/100, screenheight/100)
         pygame.display.flip()
 
         # Esperar entrada para reiniciar o salir
